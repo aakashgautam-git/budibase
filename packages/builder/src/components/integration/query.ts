@@ -1,4 +1,4 @@
-import { findHBSBlocks } from "@budibase/string-templates"
+import { findHBSBlocks, FIND_ANY_HBS_REGEX } from "@budibase/string-templates"
 import restUtils from "@/helpers/data/utils"
 import {
   runtimeToReadableMap,
@@ -475,8 +475,12 @@ export function keyValueArrayToRecord(
 }
 
 export function isValidEndpointUrl(url: string | undefined): boolean {
-  if (!url || /\s/.test(url)) return false
+  if (!url) return false
   if (!/^(https?:\/\/|\{\{)/.test(url)) return false
+  // Bindings may legitimately contain whitespace (e.g. {{ contact_id }}), so
+  // strip them out before rejecting the URL for containing whitespace.
+  const withoutBindings = url.replace(new RegExp(FIND_ANY_HBS_REGEX), "")
+  if (/\s/.test(withoutBindings)) return false
   if (findHBSBlocks(url).length > 0) return true
   try {
     new URL(url)
